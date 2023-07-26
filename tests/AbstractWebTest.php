@@ -24,7 +24,7 @@ abstract class AbstractWebTest extends WebTestCase
         }
 
         if ($this->databaseMockManager == null) {
-            $this->databaseMockManager = new DatabaseMockManager(self::$kernel);
+            $this->databaseMockManager = new DatabaseMockManager(self::$kernel, self::$webClient);
         }
 
         self::$webClient->disableReboot();

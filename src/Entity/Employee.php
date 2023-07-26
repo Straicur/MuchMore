@@ -47,7 +47,7 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Regex(pattern: '/^[0-9]{11}$/', message: 'Bad pesel')]
     private string $pesel;
 
-    #[ORM\ManyToOne(inversedBy: 'employees')]
+    #[ORM\ManyToOne(cascade: ['persist'], inversedBy: 'employees')]
     #[ORM\JoinColumn(nullable: false)]
     private Gender $gender;
 

@@ -2,7 +2,7 @@ security:
     enable_authenticator_manager: true
     # https://symfony.com/doc/current/security.html#registering-the-user-hashing-passwords
     password_hashers:
-        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+        App\Entity\Employee: 'auto'
     # https://symfony.com/doc/current/security.html#loading-the-user-the-user-provider
     providers:
         # used to reload user from session & other features (e.g. switch_user)
@@ -52,7 +52,6 @@ security:
         - { path: ^/api/user/books/, roles: PUBLIC_ACCESS }
         - { path: ^/api/user/book/detail, roles: PUBLIC_ACCESS }
         - { path: ^/api/user/book/opinion/add, roles: PUBLIC_ACCESS }
-
 when@test:
     security:
         password_hashers:

@@ -39,9 +39,9 @@ class PeselService implements PeselServiceInterface
         $controlNr = ($int == 10) ? 0 : $int;
 
         if ($controlNr == $this->pesel[10]) {
-            return true;
+            return false;
         }
-        return false;
+        return true;
     }
 
     /**
@@ -72,13 +72,13 @@ class PeselService implements PeselServiceInterface
         switch (substr($month, 0, 1)) {
             case "0":
             case "1":
-                $century = 1900;
+                $century = 19;
                 break;
             case "8":
-                $century = 1800;
+                $century = 18;
                 break;
             case "2":
-                $century = 2000;
+                $century = 20;
                 break;
             default:
             {
@@ -86,8 +86,8 @@ class PeselService implements PeselServiceInterface
             }
         }
 
-        if ($century == '2000') $month = $month - 20;
-        if ($century == '1800') $month = $month - 80;
+        if ($century == '20') $month = $month - 20;
+        if ($century == '18') $month = $month - 80;
 
         $year = $century . substr($this->pesel, 0, 2);
         $maxDays = cal_days_in_month(CAL_GREGORIAN, $month, $year);
@@ -98,7 +98,7 @@ class PeselService implements PeselServiceInterface
             return false;
         }
 
-        return DateTime::createFromFormat('d.m.Y', "$year-$month-$day");
+        return DateTime::createFromFormat('d.m.Y', "$day.$month.$year");
     }
 
     /**

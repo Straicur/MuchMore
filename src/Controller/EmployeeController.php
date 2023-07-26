@@ -37,6 +37,7 @@ class EmployeeController extends AbstractController
      * @param EmployeeRepository $employeeRepository
      * @param GenderRepository $genderRepository
      * @param UserPasswordHasherInterface $passwordHasher
+     * @param PeselService $peselService
      * @return Response
      * @throws DataNotFoundException
      * @throws InvalidJsonDataException
@@ -88,7 +89,7 @@ class EmployeeController extends AbstractController
             }
 
             $gender = $genderRepository->findOneBy([
-                "id" => $employeeAddQuery->getGenderID()
+                "name" => $employeeAddQuery->getGender()->value
             ]);
 
             if ($gender == null) {
@@ -103,7 +104,7 @@ class EmployeeController extends AbstractController
                 throw new DataNotFoundException(["employee.add.invalid.gender"]);
             }
 
-            if ($peselService->getBirthDate()->getTimestamp() != $employeeAddQuery->getBirthday()->getTimestamp()) {
+            if (!$peselService->getBirthDate() || $peselService->getBirthDate()->getTimestamp() != $employeeAddQuery->getBirthday()->getTimestamp()) {
                 $endpointLogger->error('Wrong giver birthday');
                 throw new DataNotFoundException(["employee.add.invalid.birthday"]);
             }
@@ -119,7 +120,7 @@ class EmployeeController extends AbstractController
 
             $employeeRepository->add($employee);
 
-            return ResponseTool::getResponse(null, 201);
+            return ResponseTool::getResponse(new EmployeeModel($employee->getId(), $employee->getEmail(), implode($employee->getRoles()), $employee->getFirstname(), $employee->getLastname(), $employee->getBirthday(), $employee->getPesel(), new GenderModel($employee->getGender()->getId(), $employee->getGender()->getName())), 201);
         } else {
             $endpointLogger->error('Invalid query');
             throw new InvalidJsonDataException("employee.add.invalid.query");
@@ -212,10 +213,10 @@ class EmployeeController extends AbstractController
                 }
             }
 
-            $employee->setEmail($employee->getEmail());
+            $employee->setEmail($employeeEditQuery->getEmail());
 
             $gender = $genderRepository->findOneBy([
-                "id" => $employeeEditQuery->getGenderID()
+                "name" => $employeeEditQuery->getGender()->value
             ]);
 
             if ($gender == null) {
@@ -232,25 +233,34 @@ class EmployeeController extends AbstractController
 
             $employee->setGender($gender);
 
-            if ($peselService->getBirthDate()->getTimestamp() != $employeeEditQuery->getBirthday()->getTimestamp()) {
+            if (!$peselService->getBirthDate() || $peselService->getBirthDate()->getTimestamp() != $employeeEditQuery->getBirthday()->getTimestamp()) {
                 $endpointLogger->error('Wrong giver birthday');
                 throw new DataNotFoundException(["employee.edit.invalid.birthday"]);
             }
 
-            $employee->setPesel($employee->getPesel());
-            $employee->setBirthday($employee->getBirthday());
-            $employee->setFirstname($employee->getFirstname());
-            $employee->setLastname($employee->getLastname());
+            $employee->setPesel($employeeEditQuery->getPesel());
+            $employee->setBirthday($employeeEditQuery->getBirthday());
+            $employee->setFirstname($employeeEditQuery->getFirstname());
+            $employee->setLastname($employeeEditQuery->getLastname());
 
             $employeeRepository->add($employee);
 
-            return ResponseTool::getResponse();
+            return ResponseTool::getResponse(new EmployeeModel($employee->getId(), $employee->getEmail(), implode($employee->getRoles()), $employee->getFirstname(), $employee->getLastname(), $employee->getBirthday(), $employee->getPesel(), new GenderModel($employee->getGender()->getId(), $employee->getGender()->getName())));
         } else {
             $endpointLogger->error('Invalid query');
             throw new InvalidJsonDataException("employee.edit.invalid.query");
         }
     }
 
+    /**
+     * @param Request $request
+     * @param RequestServiceInterface $requestServiceInterface
+     * @param AuthorizedUserServiceInterface $authorizedUserService
+     * @param LoggerInterface $endpointLogger
+     * @param EmployeeRepository $employeeRepository
+     * @return Response
+     * @throws InvalidJsonDataException
+     */
     #[Route('/api/employee/list', name: 'app_employees', methods: ["POST"])]
     #[AuthValidation(checkAuthToken: true)]
     #[OA\Post(
@@ -287,7 +297,7 @@ class EmployeeController extends AbstractController
             $firstname = null;
             $lastname = null;
             $pesel = null;
-            $genderID = null;
+            $genderName = null;
             $sort = null;
             $birthdayFrom = null;
             $birthdayTo = null;
@@ -304,11 +314,11 @@ class EmployeeController extends AbstractController
             if (array_key_exists('pesel', $searchData)) {
                 $pesel = ($searchData['pesel'] && '' != $searchData['pesel']) ? "%" . $searchData['pesel'] . "%" : null;
             }
-            if (array_key_exists('age', $searchData)) {
-                $age = $searchData['age'];
+            if (array_key_exists('sort', $searchData)) {
+                $sort = $searchData['sort'];
             }
-            if (array_key_exists('genderID', $searchData)) {
-                $genderID = $searchData['genderID'];
+            if (array_key_exists('genderName', $searchData)) {
+                $genderName = ($searchData['genderName'] && '' != $searchData['genderName']) ? "%" . $searchData['genderName'] . "%" : null;
             }
             if (array_key_exists('birthdayFrom', $searchData) && $searchData['birthdayFrom']) {
                 $birthdayFrom = $searchData['birthdayFrom'];
@@ -317,7 +327,7 @@ class EmployeeController extends AbstractController
                 $birthdayTo = $searchData['birthdayTo'];
             }
 
-            $employees = $employeeRepository->searchEmployees($email, $firstname, $lastname, $pesel, $genderID, $sort, $birthdayFrom, $birthdayTo);
+            $employees = $employeeRepository->searchEmployees($email, $firstname, $lastname, $pesel, $genderName, $sort, $birthdayFrom, $birthdayTo);
 
             $successModel = new EmployeesModel();
 

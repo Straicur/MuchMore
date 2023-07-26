@@ -2,6 +2,7 @@
 
 namespace App\Query;
 
+use App\Enums\GenderEnum;
 use DateTime;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
@@ -46,8 +47,8 @@ class EmployeeEditQuery
 
     #[Assert\NotNull(message: "GenderID is null")]
     #[Assert\NotBlank(message: "GenderID is blank")]
-    #[Assert\Uuid]
-    private Uuid $genderID;
+    #[Assert\Type(type: "string")]
+    private string $gender;
 
     /**
      * @return Uuid
@@ -148,21 +149,22 @@ class EmployeeEditQuery
     }
 
     /**
-     * @return Uuid
+     * @return GenderEnum
      */
-    #[OA\Property(type: "string", example: "60266c4e-16e6-1ecc-9890-a7e8b0073d3b")]
-    public function getGenderID(): Uuid
+    public function getGender(): GenderEnum
     {
-        return $this->genderID;
+        return match ($this->gender) {
+            "Mężczyzna" => GenderEnum::MAN,
+            "Kobieta" => GenderEnum::WOMAN,
+        };
     }
 
     /**
-     * @param string $genderID
+     * @param string $gender
      */
-    public function setGenderID(string $genderID): void
+    public function setGender(string $gender): void
     {
-        $this->genderID = Uuid::fromString($genderID);
+        $this->gender = $gender;
     }
-
 
 }
