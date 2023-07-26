@@ -3,11 +3,13 @@
 namespace App\Repository;
 
 use App\Entity\Employee;
+use App\Enums\EntitySort;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<Employee>
@@ -66,6 +68,94 @@ class EmployeeRepository extends ServiceEntityRepository implements PasswordUpgr
         $this->getEntityManager()->flush();
     }
 
+    /**
+     * @param string|null $email
+     * @param string|null $firstname
+     * @param string|null $lastname
+     * @param string|null $pesel
+     * @param Uuid|null $genderID
+     * @param int|null $sort
+     * @param \DateTime|null $birthdayFrom
+     * @param \DateTime|null $birthdayTo
+     * @return Employee[]
+     */
+    public function searchEmployees(string $email = null, string $firstname = null, string $lastname = null, string $pesel = null, Uuid $genderID = null, int $sort = null, \DateTime $birthdayFrom = null, \DateTime $birthdayTo = null): array
+    {
+
+        $qb = $this->createQueryBuilder('e');
+        if ($email != null) {
+            $qb->andWhere('e.email LIKE :email')
+                ->setParameter('email', $email);
+        }
+        if ($firstname != null) {
+            $qb->andWhere('e.firstname LIKE :firstname')
+                ->setParameter('firstname', $firstname);
+        }
+        if ($lastname != null) {
+            $qb->andWhere('e.lastname LIKE :lastname')
+                ->setParameter('lastname', $lastname);
+        }
+        if ($pesel != null) {
+            $qb->andWhere('e.pesel LIKE :pesel')
+                ->setParameter('pesel', $pesel);
+        }
+        if ($genderID != null) {
+            $qb->leftJoin('e.gender', 'g')
+                ->andWhere('g.id = :gender')
+                ->setParameter('gender', $genderID->toBinary());
+        }
+        if ($birthdayFrom != null && $birthdayTo != null) {
+            $qb->andWhere('(:birthdayFrom >= e.birthday AND :birthdayTo <= e.birthday )')
+                ->setParameter('birthdayFrom', $birthdayFrom)
+                ->setParameter('birthdayTo', $birthdayTo);
+        } elseif ($birthdayFrom) {
+            $qb->andWhere('(:birthdayFrom >= e.birthday)')
+                ->setParameter('birthdayFrom', $birthdayFrom);
+        } elseif ($birthdayTo) {
+            $qb->andWhere('(:birthdayTo <= e.birthday)')
+                ->setParameter('birthdayTo', $birthdayTo);
+        }
+        if ($sort != null) {
+            switch ($sort) {
+                case EntitySort::EMAIL->value:
+                {
+                    $qb->$qb->orderBy("e.email", "DESC");
+                    break;
+                }
+                case EntitySort::FIRSTNAME->value:
+                {
+                    $qb->$qb->orderBy("e.firstname", "DESC");
+                    break;
+                }
+                case EntitySort::LASTNAME->value:
+                {
+                    $qb->$qb->orderBy("e.lastname", "DESC");
+                    break;
+                }
+                case EntitySort::BIRTHDAY->value:
+                {
+                    $qb->$qb->orderBy("e.birthday", "DESC");
+                    break;
+                }
+                case EntitySort::PESEL->value:
+                {
+                    $qb->$qb->orderBy("e.pesel", "DESC");
+                    break;
+                }
+                case EntitySort::GENDER->value:
+                {
+                    $qb->leftJoin('e.gender', 'g')
+                        ->groupBy('g')
+                        ->orderBy('g.name', "DESC");
+                    break;
+                }
+            }
+        }
+
+        $query = $qb->getQuery();
+
+        return $query->execute();
+    }
 //    /**
 //     * @return Employee[] Returns an array of Employee objects
 //     */

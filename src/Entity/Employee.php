@@ -42,8 +42,10 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'datetime', nullable: true)]
     private \DateTime $birthday;
 
-    #[ORM\Column(type: 'integer')]
-    private int $pesel;
+    #[ORM\Column(type: 'string')]
+    #[Assert\Length(min: 11, max: 11)]
+    #[Assert\Regex(pattern: '/^[0-9]{11}$/', message: 'Bad pesel')]
+    private string $pesel;
 
     #[ORM\ManyToOne(inversedBy: 'employees')]
     #[ORM\JoinColumn(nullable: false)]
@@ -54,10 +56,10 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface
      * @param string $firstname
      * @param string $lastname
      * @param \DateTime $birthday
-     * @param int $pesel
+     * @param string $pesel
      * @param Gender $gender
      */
-    public function __construct(string $email, string $firstname, string $lastname, \DateTime $birthday, int $pesel, Gender $gender)
+    public function __construct(string $email, string $firstname, string $lastname, \DateTime $birthday, string $pesel, Gender $gender)
     {
         $this->email = $email;
         $this->firstname = $firstname;
@@ -181,12 +183,12 @@ class Employee implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getPesel(): int
+    public function getPesel(): string
     {
         return $this->pesel;
     }
 
-    public function setPesel(int $pesel): static
+    public function setPesel(string $pesel): static
     {
         $this->pesel = $pesel;
 
