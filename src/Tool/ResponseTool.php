@@ -26,20 +26,4 @@ class ResponseTool
 
         return new Response($serializedObject, $httpCode, self::$headers);
     }
-
-    public static function getBinaryFileResponse($fileDir, $delete = false): BinaryFileResponse
-    {
-        $response = new BinaryFileResponse($fileDir);
-
-        $response->setContentDisposition(
-            ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-            basename($fileDir)
-        );
-
-        if ($delete) {
-            $response->deleteFileAfterSend();
-        }
-
-        return $response;
-    }
 }
